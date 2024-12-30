@@ -46,7 +46,10 @@ class Model(nn.Module):
         self.decoder = Decoder(hidden_size, input_size, num_layers, fcc_intermediate)  
         self.prediction_horizon = prediction_horizon
 
-    def forward(self, x, teacher_forcing_targets=None, teacher_forcing_ratio=0.5):
+    def forward(self, combined_input, teacher_forcing_ratio=0.5):
+
+        x = combined_input[:, 0, :, :] 
+        teacher_forcing_targets = combined_input[:, 1, :, :]
 
         batch_size = x.size(0)
 

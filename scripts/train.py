@@ -1,8 +1,11 @@
 import yaml
 import torch
+import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader
 from prefect import flow, task, get_run_logger
+import mlflow
+from mlflow.pytorch import log_model
 from data_ingestion import load_and_clean_data
 from feature_engineering import create_features
 from dataset import TimeSeriesDataset
@@ -11,7 +14,7 @@ from evaluation import Evaluator
 from loss import combined_loss
 from model import Model
 
-# Config loading task
+
 @task
 def load_config(config_path):
     with open(config_path, "r") as file:
@@ -58,10 +61,16 @@ def initialize_model(input_size, hidden_size, num_layers, fcc_intermediate, pred
 
 # Training task
 @task
-def train_model(model, train_loader, val_loader, optimizer, scheduler, device, num_epochs, combined_loss):
-    logger = get_run_logger()  # Prefect logger
+def train_model(model, train_loader, val_loader, optimizer, scheduler, device, num_epochs, combined_loss, config):
+    logger = get_run_logger()
     trainer = Trainer(model, optimizer, combined_loss, device)
     train_losses, val_losses = [], []
+
+    # Start MLflow run
+    mlflow.start_run()
+
+    # Log configuration parameters to MLflow
+    mlflow.log_params(config)
 
     for epoch in range(num_epochs):
         train_loss = trainer.train_epoch(train_loader)
@@ -70,6 +79,9 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, device, n
         train_losses.append(train_loss)
         val_losses.append(val_loss)
 
+        # Log metrics to MLflow
+        mlflow.log_metrics({"train_loss": train_loss, "val_loss": val_loss}, step=epoch)
+
         logger.info(
             f"Epoch [{epoch + 1}/{num_epochs}] - "
             f"Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, "
@@ -77,6 +89,11 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, device, n
         )
         
         scheduler.step(val_loss)
+
+    # Log the model to MLflow
+    log_model(model, "model")
+
+    mlflow.end_run()
 
     return train_losses, val_losses
 
@@ -134,17 +151,28 @@ def training_pipeline(config_path):
         patience=scheduler_params["patience"],
     )
 
-    # Step 8: Train Model
-    train_losses, val_losses = train_model(
-        model, train_loader, val_loader, optimizer, scheduler, device, config["num_epochs"], combined_loss
-    )
+    # # Step 8: Train Model
+    # train_losses, val_losses = train_model(
+    #     model, train_loader, val_loader, optimizer, scheduler, device, config["num_epochs"], combined_loss, config
+    # )
+
+    model.load_state_dict(torch.load("../miscellaneous/lstm_model.pth", map_location=torch.device('cpu')))
+
+    # input_example = np.random.rand(config["batch_size"], config["seq_length"], config["input_size"])
+    mlflow.start_run()
+    log_model(model, "model")
 
     # Step 9: Evaluate Model
-    results = evaluate_model(model, val_loader, scaler, device)
+    # results = evaluate_model(model, val_loader, scaler, device)
 
     # Step 10: Save Results
-    print("Training and Evaluation Complete")
-    print("Results:", results)
+    # print("Training and Evaluation Complete")
+    # print("Results:", results)
+
+    # mlflow.log_metric("MAE_mean", np.mean(results["MAE_per_timestep"]))
+    # mlflow.log_metric("RMSE_mean", np.mean(results["RMSE_per_timestep"]))
+    # mlflow.log_metric("MAPE_mean", np.mean(results["MAPE_per_timestep"]))
+    mlflow.end_run()
 
 # Run the pipeline
 if __name__ == "__main__":

@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/aaayush/Documents/Project/scripts/mlruns/0/eb346e6d2585451e9d6bb4784a188dea/artifacts
+end_time: 1735593414208
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: eb346e6d2585451e9d6bb4784a188dea
+run_name: carefree-bird-507
+run_uuid: eb346e6d2585451e9d6bb4784a188dea
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1735593410327
+status: 3
+tags: []
+user_id: aaayush

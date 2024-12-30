@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/aaayush/Documents/Project/scripts/mlruns/0/ec78c33154234114899a2385f9af730c/artifacts
+end_time: 1735515732772
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: ec78c33154234114899a2385f9af730c
+run_name: casual-hen-215
+run_uuid: ec78c33154234114899a2385f9af730c
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1735514824736
+status: 3
+tags: []
+user_id: aaayush

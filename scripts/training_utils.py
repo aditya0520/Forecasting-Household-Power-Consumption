@@ -21,7 +21,8 @@ class Trainer:
             batch_X, batch_y = batch_X.to(self.device), batch_y.to(self.device)
 
             # Forward pass
-            outputs = self.model(batch_X, teacher_forcing_targets=batch_y)
+            combined_input = torch.cat((batch_X, batch_y), dim=1)
+            outputs = self.model(combined_input)
             loss = self.combined_loss(outputs, batch_y[:, :, 0].squeeze())
 
             # Backward pass
@@ -44,7 +45,8 @@ class Trainer:
                 batch_X, batch_y = batch_X.to(self.device), batch_y.to(self.device)
 
                 # Forward pass
-                outputs = self.model(batch_X, teacher_forcing_targets=batch_y)
+                combined_input = torch.cat((batch_X, batch_y), dim=1)
+                outputs = self.model(combined_input)
                 loss = self.combined_loss(outputs, batch_y[:, :, 0].squeeze())
 
                 val_loss += loss.item()
